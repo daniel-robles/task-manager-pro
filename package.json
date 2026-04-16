@@ -1,0 +1,49 @@
+{
+  "name": "taskmaster-pro",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --exec \"tsx src/index.ts\" --ext ts --ignore \"**/*.test.ts\"",
+    "test": "jest --runInBand --detectOpenHandles",
+    "test:coverage": "jest --coverage",
+    "seed": "tsx src/infrastructure/db/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@libsql/client": "^0.17.2",
+    "@prisma/adapter-better-sqlite3": "^7.7.0",
+    "@prisma/adapter-libsql": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "prisma": "^7.7.0",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.6.0",
+    "@types/supertest": "^7.2.0",
+    "@types/uuid": "^10.0.0",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}

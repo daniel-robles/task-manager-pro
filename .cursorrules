@@ -1,0 +1,104 @@
+You are a coding agent for this repo. Follow these rules strictly.
+
+## Core principles
+- Prefer **clarity over cleverness**.
+- Keep code **testable**, **pure where possible**, and **side-effect boundaries explicit**.
+- Enforce **Clean Architecture** layering and dependency direction.
+- Prefer **composition** over inheritance.
+- Avoid “magic” behavior; make invariants explicit via types and validation.
+
+## Architecture (Clean Architecture)
+Use these layers (names can vary, but the dependency direction must not):
+- **Domain**: entities, value objects, domain services, domain errors. No framework/db/http imports.
+- **Application (Use Cases)**: orchestrates domain + ports, transaction boundaries, authorization decisions. No HTTP framework imports.
+- **Infrastructure**: adapters implementing ports (DB repos, HTTP clients, queues, file system). Can import libraries.
+- **Interface / Delivery**: REST controllers/routers, request parsing, DTO mapping, response formatting.
+
+Dependency rule:
+- Outer layers may depend on inner layers.
+- Inner layers must never import from outer layers.
+- Communicate across boundaries via **ports (interfaces)** and **DTOs**.
+
+## TypeScript strictness (strong typing)
+- This project assumes **TypeScript `strict: true`** (and do not weaken types to “make it compile”).
+- Do not use `any`. If unavoidable, use `unknown` + narrow with Zod/type guards.
+- Avoid type assertions (`as X`) unless you can prove safety; prefer runtime validation.
+- Prefer `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and `noImplicitOverride` when practical.
+- Prefer immutable data (`readonly`, `as const`) where it reduces bugs.
+- All public functions must have explicit parameter and return types if inference is ambiguous.
+
+## Validation (Zod)
+- Validate **all external inputs** at the boundary:
+  - HTTP request params/query/body
+  - env/config
+  - webhooks/events
+  - DB “unknown” JSON blobs
+- Use Zod schemas as the source of truth; derive types via `z.infer<typeof Schema>`.
+- Use `safeParse` to avoid throwing; convert Zod issues into a consistent error format.
+- Keep schemas near the boundary (delivery) or as shared DTO schemas (application), not in domain entities.
+
+## Repository pattern
+- Repositories are **ports** defined in the application layer (interfaces), implemented in infrastructure.
+- Repositories return **domain entities/value objects** or application DTOs—never ORM models.
+- Keep transactions out of repositories unless the port explicitly models them; prefer a unit-of-work/transaction boundary in application services.
+- Keep method names intention-revealing:
+  - `getById` (may return null)
+  - `requireById` (throws/returns error if missing) — pick one style and apply consistently
+  - `list`, `search`, `save`, `delete`
+- Pagination must be explicit (cursor or offset) and typed.
+
+## RESTful API conventions
+- Use nouns for resources: `/tasks`, `/projects/{projectId}/tasks`
+- Standard methods:
+  - `GET /resources` list
+  - `GET /resources/{id}` get
+  - `POST /resources` create
+  - `PUT /resources/{id}` replace (full update)
+  - `PATCH /resources/{id}` partial update
+  - `DELETE /resources/{id}` delete
+- Status codes:
+  - 200/204 for success, 201 for create (+ Location when appropriate)
+  - 400 validation error, 401 unauthenticated, 403 unauthorized
+  - 404 not found, 409 conflict, 422 domain rule violation (if you distinguish it)
+  - 429 rate limit, 500 unexpected
+- Request/response shapes:
+  - Use explicit DTOs (no leaking domain internals).
+  - Include stable error codes and human message.
+  - Prefer consistent envelope only if the project already uses it (otherwise keep it simple and consistent).
+
+## Centralized error handling
+- No ad-hoc `res.status(...).json(...)` scattered across business logic.
+- Model errors explicitly:
+  - Domain errors (invariants/business rules)
+  - Application errors (use-case orchestration/auth)
+  - Infrastructure errors (db/network/timeouts)
+- Convert errors to HTTP in one place (global middleware/filter):
+  - Map known error types to status + error code + details
+  - Unknown errors become 500 with a generic message
+- Ensure errors are safe:
+  - Do not leak secrets, tokens, raw SQL, stack traces to clients
+  - Log internal details server-side with correlation/request ID
+
+## JSDoc documentation standards
+- Public APIs (exported functions/classes), use-cases, and ports must have JSDoc:
+  - One-line summary + important invariants/constraints
+  - `@param`, `@returns`, `@throws` (only if it can throw), `@example` for non-obvious usage
+- Don’t write “narration comments” that restate code. Document intent, edge cases, and contracts.
+
+## Mapping & boundaries
+- Keep mapping explicit:
+  - Request DTO -> validated input -> use-case command
+  - Domain/entity -> response DTO
+- Do not pass HTTP request objects into application/domain code.
+- Do not import Zod, Express/Fastify/Nest, ORM, or node globals into domain.
+
+## Testing expectations (if tests exist)
+- Domain: pure unit tests for invariants and value objects.
+- Application: use-case tests with mocked ports.
+- Infrastructure: integration tests (DB adapters, external clients) behind ports.
+
+## Code hygiene
+- Prefer small modules, single responsibility.
+- No circular dependencies.
+- Keep “index.ts barrel exports” minimal to avoid hidden coupling.
+- Prefer named exports for stability; default exports only when idiomatic for the framework.
